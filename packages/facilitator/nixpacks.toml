@@ -1,15 +1,16 @@
 # Nixpacks configuration for Facilitator Service
-# Railway will use this when root directory is set to packages/facilitator
+# IMPORTANT: Set root directory to repository root (.) in Railway dashboard
+# This ensures the full monorepo is available for workspace dependencies
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "pnpm"]
 
 [phases.install]
-cmds = ["cd ../.. && pnpm install"]
+cmds = ["pnpm install"]
 
 [phases.build]
-cmds = ["cd ../.. && pnpm build"]
+cmds = ["pnpm build"]
 
 [start]
-cmd = "node dist/index.js"
+cmd = "cd packages/facilitator && node dist/index.js"
 

@@ -1,13 +1,16 @@
 # Railway Configuration for Example Server
 # Service: x402 Example Server
 # Demo API with payment protection
+#
+# IMPORTANT: Set root directory to repository root (.) in Railway dashboard
+# This ensures the full monorepo is available for workspace dependencies
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "cd ../.. && pnpm install && pnpm build"
+buildCommand = "pnpm install && pnpm build"
 
 [deploy]
-startCommand = "npx tsx src/index.ts"
+startCommand = "cd examples/server-example && npx tsx src/index.ts"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"

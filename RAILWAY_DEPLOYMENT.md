@@ -33,12 +33,13 @@ Or create via Railway dashboard at https://railway.app/new
 1. **In Railway Dashboard:**
    - Click "New Service" → "GitHub Repo"
    - Select your `stellar-x402` repository
-   - **IMPORTANT:** Set the Root Directory to `packages/facilitator`
+   - **IMPORTANT:** Set the Root Directory to `.` (repository root)
+   - This is required because the facilitator depends on workspace packages
 
 2. **Configure Build Settings:**
-   - Build Command: `cd ../.. && pnpm install && pnpm build`
-   - Start Command: `node dist/index.js`
-   - Watch Paths: `packages/facilitator/**`
+   - Build Command: `pnpm install && pnpm build` (auto-detected from nixpacks.toml)
+   - Start Command: `cd packages/facilitator && node dist/index.js` (auto-detected)
+   - Watch Paths: `packages/facilitator/**` (optional, for faster rebuilds)
 
 3. **Add Environment Variables:**
    ```
@@ -71,12 +72,13 @@ Or create via Railway dashboard at https://railway.app/new
 1. **In Railway Dashboard:**
    - Click "New Service" → "GitHub Repo"
    - Select your `stellar-x402` repository (same repo)
-   - **IMPORTANT:** Set the Root Directory to `examples/server-example`
+   - **IMPORTANT:** Set the Root Directory to `.` (repository root)
+   - This is required because the server depends on workspace packages
 
 2. **Configure Build Settings:**
-   - Build Command: `cd ../.. && pnpm install && pnpm build`
-   - Start Command: `npx tsx src/index.ts`
-   - Watch Paths: `examples/server-example/**`
+   - Build Command: `pnpm install && pnpm build` (auto-detected from nixpacks.toml)
+   - Start Command: `cd examples/server-example && npx tsx src/index.ts` (auto-detected)
+   - Watch Paths: `examples/server-example/**` (optional, for faster rebuilds)
 
 3. **Add Environment Variables:**
    ```
