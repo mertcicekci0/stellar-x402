@@ -167,22 +167,42 @@ export function getPaywallHtml(options: GetPaywallHtmlOptions): string {
       return parseFloat(balance).toFixed(2);
     }
 
-    // Wait for Freighter extension to be injected
-    async function waitForFreighter(timeout) {
-      if (timeout === undefined) timeout = 3000;
-      const start = Date.now();
-      log('Waiting for Freighter extension...');
-
-      while (Date.now() - start < timeout) {
-        if (window.freighterApi) {
-          log('Freighter API detected');
-          return window.freighterApi;
+    // Load Freighter API from CDN
+    let freighterApi = null;
+    async function loadFreighterApi() {
+      if (freighterApi) return freighterApi;
+      
+      try {
+        log('Loading @stellar/freighter-api from CDN...');
+        const module = await import('https://cdn.jsdelivr.net/npm/@stellar/freighter-api@2.0.0/+esm');
+        
+        // Handle different export formats
+        if (module.isConnected && module.setAllowed && module.getAddress) {
+          freighterApi = module;
+        } else if (module.default && module.default.isConnected) {
+          freighterApi = module.default;
+        } else {
+          throw new Error('Freighter API module structure not recognized');
         }
-        await new Promise(function(r) { setTimeout(r, 100); });
+        
+        log('Freighter API loaded successfully');
+        return freighterApi;
+      } catch (error) {
+        log('Failed to load Freighter API: ' + error.message);
+        throw error;
       }
+    }
 
-      log('Freighter not detected after ' + timeout + 'ms');
-      return null;
+    // Check if Freighter is available
+    async function isFreighterAvailable() {
+      try {
+        const api = await loadFreighterApi();
+        const connected = await api.isConnected();
+        return connected === true || (connected && connected.isConnected === true);
+      } catch (error) {
+        log('Freighter not available: ' + error.message);
+        return false;
+      }
     }
 
     // Check HTTPS requirement
@@ -204,32 +224,54 @@ export function getPaywallHtml(options: GetPaywallHtmlOptions): string {
       log('Connecting wallet...');
 
       try {
-        const freighter = await waitForFreighter(5000);
-        if (!freighter) {
+        // Load Freighter API
+        const api = await loadFreighterApi();
+        
+        // Check if connected
+        const connected = await api.isConnected();
+        if (!connected) {
           throw new Error('Freighter wallet not detected. Please install it from https://freighter.app and refresh.');
         }
+        log('Freighter is connected');
 
-        // Request access
+        // Request access using setAllowed (correct method per Freighter docs)
+        // Fallback to requestAccess if setAllowed doesn't exist (for compatibility)
         log('Requesting access...');
-        const accessResult = await freighter.requestAccess();
-        log('Access result: ' + JSON.stringify(accessResult));
+        let isAllowed = false;
+        if (api.setAllowed) {
+          isAllowed = await api.setAllowed();
+          log('setAllowed result: ' + isAllowed);
+        } else if (api.requestAccess) {
+          // Fallback for older API versions
+          const accessResult = await api.requestAccess();
+          log('requestAccess result: ' + JSON.stringify(accessResult));
+          if (accessResult.error) {
+            throw new Error('Access denied: ' + accessResult.error);
+          }
+          isAllowed = true;
+        } else {
+          throw new Error('Freighter API does not support setAllowed or requestAccess');
+        }
 
-        if (accessResult.error) {
-          throw new Error('Access denied: ' + accessResult.error);
+        if (!isAllowed) {
+          throw new Error('Access denied by user');
         }
 
         // Get address
         log('Getting address...');
-        const addressResult = await freighter.getAddress();
+        const addressResult = await api.getAddress();
         log('Address result: ' + JSON.stringify(addressResult));
 
+        // Handle different response formats
         if (addressResult.error) {
           throw new Error('Failed to get address: ' + addressResult.error);
         }
 
-        publicKey = addressResult.address;
-        if (!publicKey) {
-          throw new Error('No address returned from Freighter');
+        // getAddress can return { address } or just the address string
+        publicKey = addressResult.address || addressResult;
+        
+        if (!publicKey || typeof publicKey !== 'string') {
+          throw new Error('No valid address returned from Freighter');
         }
 
         log('Connected: ' + publicKey);
@@ -320,24 +362,25 @@ export function getPaywallHtml(options: GetPaywallHtmlOptions): string {
         // Sign with Freighter
         showStatus('Please sign the transaction in Freighter...', 'loading');
 
-        const freighter = window.freighterApi;
-        if (!freighter) {
+        const api = await loadFreighterApi();
+        if (!api) {
           throw new Error('Freighter wallet not available');
         }
 
         log('Requesting signature...');
-        const signResult = await freighter.signTransaction(tx.toXDR(), {
+        const signResult = await api.signTransaction(tx.toXDR(), {
           networkPassphrase: networkPassphrase,
         });
-        log('Sign result received');
+        log('Sign result received: ' + JSON.stringify(signResult));
 
         if (signResult.error) {
           throw new Error('Signing failed: ' + signResult.error);
         }
 
-        const signedTxXdr = signResult.signedTxXdr;
-        if (!signedTxXdr) {
-          throw new Error('No signed transaction returned');
+        // signTransaction returns { signedTxXdr } or just the signed XDR string
+        const signedTxXdr = signResult.signedTxXdr || signResult;
+        if (!signedTxXdr || typeof signedTxXdr !== 'string') {
+          throw new Error('No signed transaction returned from Freighter');
         }
 
         log('Transaction signed');
@@ -419,18 +462,21 @@ export function getPaywallHtml(options: GetPaywallHtmlOptions): string {
         return;
       }
 
-      // Wait a bit for extension to inject
+      // Wait a bit for extension to be ready
       await new Promise(function(r) { setTimeout(r, 1000); });
 
       // Try auto-connect if already authorized
-      const freighter = await waitForFreighter(3000);
-      if (freighter) {
-        try {
+      try {
+        const available = await isFreighterAvailable();
+        if (available) {
           log('Checking if already connected...');
-          const addressResult = await freighter.getAddress();
+          const api = await loadFreighterApi();
+          const addressResult = await api.getAddress();
 
-          if (addressResult.address && !addressResult.error) {
-            publicKey = addressResult.address;
+          // Handle different response formats
+          const address = addressResult.address || addressResult;
+          if (address && typeof address === 'string' && !addressResult.error) {
+            publicKey = address;
             log('Already connected: ' + publicKey);
 
             connectBtn.classList.add('hidden');
@@ -440,10 +486,10 @@ export function getPaywallHtml(options: GetPaywallHtmlOptions): string {
             showStatus('Wallet connected: ' + publicKey.slice(0, 8) + '...' + publicKey.slice(-4), 'success');
             setTimeout(hideStatus, 2000);
           }
-        } catch (e) {
-          // Not connected yet, that's fine
-          log('Not yet authorized: ' + e.message);
         }
+      } catch (e) {
+        // Not connected yet, that's fine
+        log('Not yet authorized or Freighter not available: ' + e.message);
       }
     })();
   </script>
