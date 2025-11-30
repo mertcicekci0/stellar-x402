@@ -6,15 +6,15 @@
 
 export const paywallStyles = `
 :root {
-  --bg-dark: #000000;
-  --bg-card: #111111;
-  --text-primary: #ffffff;
-  --text-secondary: #888888;
-  --border-color: #333333;
-  --accent-color: #ffffff;
-  --success-color: #ffffff;
-  --error-color: #ffffff;
-  --dither-color: #222222;
+  --bg-dark: #ffffff;
+  --bg-card: #f8f9fa;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --border-color: #e2e8f0;
+  --accent-color: #111111;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --dither-color: #e5e5e5;
 }
 
 * {
@@ -24,9 +24,9 @@ export const paywallStyles = `
 }
 
 body {
-  font-family: 'Courier New', Courier, monospace; /* Tech/Retro feel */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   background-color: var(--bg-dark);
-  /* Dither effect using radial gradient */
+  /* Light Dither effect */
   background-image: radial-gradient(var(--dither-color) 1px, transparent 1px);
   background-size: 4px 4px;
   min-height: 100vh;
@@ -46,6 +46,7 @@ body {
   position: relative;
   /* Hard shadow for retro feel */
   box-shadow: 8px 8px 0px var(--border-color);
+  border-radius: 4px;
 }
 
 .paywall-header {
@@ -59,21 +60,22 @@ body {
   width: 48px;
   height: 48px;
   margin-bottom: 16px;
-  filter: grayscale(100%) contrast(200%);
+  /* Invert logo for light theme if needed, or keep as is if it's outline */
+  color: var(--text-primary);
 }
 
 .paywall-title {
   font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   margin-bottom: 8px;
   color: var(--text-primary);
 }
 
 .paywall-subtitle {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -83,19 +85,21 @@ body {
   text-align: center;
   margin-bottom: 24px;
   background: var(--bg-card);
+  border-radius: 4px;
 }
 
 .paywall-amount {
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 4px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .paywall-asset {
   color: var(--text-secondary);
   font-size: 12px;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .paywall-network {
@@ -103,9 +107,11 @@ body {
   margin-top: 12px;
   padding: 4px 8px;
   border: 1px solid var(--border-color);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   color: var(--text-secondary);
+  background: var(--bg-dark);
+  border-radius: 4px;
 }
 
 .paywall-network-dot {
@@ -124,9 +130,9 @@ body {
 .paywall-detail-row {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px dotted var(--border-color);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .paywall-detail-row:last-child {
@@ -135,7 +141,7 @@ body {
 
 .paywall-detail-label {
   color: var(--text-secondary);
-  text-transform: uppercase;
+  font-weight: 500;
 }
 
 .paywall-detail-value {
@@ -144,24 +150,26 @@ body {
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-weight: 600;
 }
 
 .paywall-button {
   width: 100%;
   padding: 14px;
   border: 1px solid var(--text-primary);
-  border-radius: 0; /* Square corners */
+  border-radius: 4px;
   font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .paywall-button-primary {
@@ -172,12 +180,14 @@ body {
 .paywall-button-primary:hover:not(:disabled) {
   background: transparent;
   color: var(--text-primary);
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
 }
 
 .paywall-button-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: var(--text-secondary);
+  border-color: var(--text-secondary);
 }
 
 .paywall-button-secondary {
@@ -190,6 +200,7 @@ body {
 .paywall-button-secondary:hover {
   border-color: var(--text-primary);
   color: var(--text-primary);
+  background: var(--bg-card);
 }
 
 .paywall-status {
@@ -197,39 +208,34 @@ body {
   padding: 12px;
   border: 1px solid var(--border-color);
   margin-bottom: 16px;
-  font-size: 12px;
-  text-transform: uppercase;
+  font-size: 13px;
+  border-radius: 4px;
+  font-weight: 500;
 }
 
 .paywall-status-loading {
   border-style: dashed;
+  background: var(--bg-card);
 }
 
 .paywall-status-success {
-  background: var(--text-primary);
-  color: var(--bg-dark);
-  border-color: var(--text-primary);
+  background: var(--bg-card);
+  color: var(--success-color);
+  border-color: var(--success-color);
 }
 
 .paywall-status-error {
-  border-color: var(--text-primary);
-  color: var(--text-primary);
-  /* Striped background for error */
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    #333 10px,
-    #333 20px
-  );
+  border-color: var(--error-color);
+  color: var(--error-color);
+  background: #fff5f5;
 }
 
 .paywall-balance {
   text-align: center;
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   margin-top: 16px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .paywall-footer {
@@ -242,8 +248,9 @@ body {
 .paywall-footer a {
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .paywall-footer a:hover {

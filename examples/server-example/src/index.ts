@@ -91,117 +91,172 @@ app.get("/", (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stellar x402 Example</title>
   <style>
+    :root {
+      --bg-dark: #ffffff;
+      --bg-card: #f8f9fa;
+      --text-primary: #111111;
+      --text-secondary: #555555;
+      --border-color: #e2e8f0;
+      --accent-color: #111111;
+      --dither-color: #e5e5e5;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
-      color: white;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(var(--dither-color) 1px, transparent 1px);
+      background-size: 4px 4px;
+      color: var(--text-primary);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
     }
+
     .container {
       max-width: 600px;
-      background: rgba(26, 26, 46, 0.8);
-      border: 1px solid #2d2d44;
-      border-radius: 16px;
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
       padding: 40px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      box-shadow: 8px 8px 0px var(--border-color);
+      border-radius: 4px;
     }
+
     h1 {
-      font-size: 32px;
+      font-size: 24px;
       margin-bottom: 16px;
-      background: linear-gradient(135deg, #7c3aed, #3b82f6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
     }
-    p { margin-bottom: 24px; color: #a0aec0; line-height: 1.6; }
+
+    p { 
+      margin-bottom: 32px; 
+      color: var(--text-secondary); 
+      line-height: 1.6; 
+      font-size: 14px;
+    }
+
     .endpoints {
-      background: rgba(124, 58, 237, 0.1);
-      border: 1px solid #2d2d44;
-      border-radius: 12px;
+      border: 1px solid var(--border-color);
       padding: 24px;
       margin-bottom: 24px;
+      background: var(--bg-card);
+      border-radius: 4px;
     }
+
     .endpoints h2 {
-      font-size: 18px;
+      font-size: 13px;
       margin-bottom: 16px;
-      color: #7c3aed;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
     }
+
     .endpoint {
       padding: 12px;
       margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+      border: 1px dotted var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      font-size: 14px;
+      background: var(--bg-dark);
+      border-radius: 4px;
     }
+
+    .endpoint:last-child {
+      margin-bottom: 0;
+    }
+
     .endpoint a {
-      color: #3b82f6;
+      color: var(--text-primary);
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 700;
+      text-transform: uppercase;
     }
+
     .endpoint a:hover {
       text-decoration: underline;
+      background: var(--text-primary);
+      color: var(--bg-dark);
     }
+
     .price {
-      color: #10b981;
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .free-badge {
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-size: 12px;
       font-weight: 600;
     }
+
     .note {
-      background: rgba(59, 130, 246, 0.1);
-      border-left: 3px solid #3b82f6;
+      border: 1px solid var(--border-color);
       padding: 16px;
-      border-radius: 8px;
-      margin-top: 24px;
+      margin-top: 32px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-radius: 4px;
+      background: var(--bg-card);
     }
-    .note strong { color: #3b82f6; }
+
+    .note strong { 
+      color: var(--text-primary); 
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🌟 Stellar x402 Example</h1>
-    <p>Welcome! This is a demo server protected with Stellar x402 payments.</p>
+    <h1>Stellar x402 Example</h1>
+    <p>System Online. Secure Payment Gateway Active.</p>
     
     <div class="endpoints">
-      <h2>Free Endpoints</h2>
+      <h2>Public Access</h2>
       <div class="endpoint">
-        <a href="/">Home</a>
-        <span style="color: #10b981;">Free</span>
+        <a href="/">[ Home ]</a>
+        <span class="free-badge">Free</span>
       </div>
       <div class="endpoint">
-        <a href="/health">Health Check</a>
-        <span style="color: #10b981;">Free</span>
+        <a href="/health">[ Health Check ]</a>
+        <span class="free-badge">Free</span>
       </div>
     </div>
 
     <div class="endpoints">
-      <h2>Protected Endpoints (Require Payment)</h2>
+      <h2>Restricted Access</h2>
       <div class="endpoint">
-        <a href="/api/premium/content">Premium Content</a>
+        <a href="/api/premium/content">[ Premium Content ]</a>
         <span class="price">1 XLM</span>
       </div>
       <div class="endpoint">
-        <a href="/api/premium/stats">Premium Stats</a>
+        <a href="/api/premium/stats">[ Premium Stats ]</a>
         <span class="price">1 XLM</span>
       </div>
       <div class="endpoint">
-        <a href="/api/data">Data API</a>
+        <a href="/api/data">[ Data API ]</a>
         <span class="price">0.5 XLM</span>
       </div>
     </div>
 
     <div class="note">
-      <strong>💡 How to Test:</strong><br>
-      1. Click any protected endpoint above<br>
-      2. You'll see a payment UI (if Freighter is installed)<br>
-      3. Connect your Freighter wallet<br>
-      4. Approve the payment<br>
-      5. Access the protected content!
+      <strong>>> System Instructions</strong>
+      1. Select a restricted endpoint above<br>
+      2. Authenticate via Freighter Wallet<br>
+      3. Authorize transaction<br>
+      4. Access granted
     </div>
   </div>
 </body>
