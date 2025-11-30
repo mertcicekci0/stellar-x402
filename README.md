@@ -58,6 +58,206 @@ This implementation brings x402 to the **Stellar network**, offering unique adva
 | **Replay Protection** | Nonce-based | **Sequence numbers** (protocol-level) |
 | **Browser Wallet** | MetaMask | **Freighter** |
 
+## Protocol Format Comparison
+
+Here's a detailed look at the actual JSON structures used in Stellar x402 vs the base x402 protocol. This helps you understand the differences at a glance.
+
+### 1. Payment Required Response (402 Response)
+
+When a server requires payment, it returns a `402 Payment Required` status with this structure:
+
+**Base x402 Format (EVM Example):**
+```json
+{
+  "x402Version": 1,
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "base-sepolia",
+      "maxAmountRequired": "1000000",  // 1 USDC (6 decimals)
+      "resource": "https://api.example.com/premium",
+      "description": "Premium API access",
+      "mimeType": "application/json",
+      "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+      "maxTimeoutSeconds": 300,
+      "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",  // USDC contract
+      "extra": {
+        "name": "USD Coin",
+        "version": "2"
+      }
+    }
+  ],
+  "error": null
+}
+```
+
+**Stellar x402 Format:**
+```json
+{
+  "x402Version": 1,
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "stellar-testnet",
+      "maxAmountRequired": "10000000",  // 1 XLM (7 decimals = stroops)
+      "resource": "https://api.example.com/premium",
+      "description": "Premium API access",
+      "mimeType": "application/json",
+      "payTo": "GC63PSERYMUUUJKYSSFQ7FKRAU5UPIP3XUC6X7DLMZUB7SSCPW5BSIRT",
+      "maxTimeoutSeconds": 300,
+      "asset": "native",  // Native XLM (no contract needed!)
+      "extra": {
+        "feeSponsorship": true  // Facilitator can pay fees
+      }
+    }
+  ],
+  "error": null
+}
+```
+
+**Key Differences:**
+- `network`: `"stellar-testnet"` vs `"base-sepolia"`
+- `asset`: `"native"` for XLM (no contract) vs ERC-20 contract address
+- `maxAmountRequired`: Stroops (7 decimals) vs wei/token units (varies)
+- `payTo`: Stellar address (`G...`) vs EVM address (`0x...`)
+- `extra`: Stellar-specific fields like `feeSponsorship`
+
+### 2. Payment Payload (X-PAYMENT Header)
+
+The client sends this as the `X-PAYMENT` header (base64-encoded JSON):
+
+**Base x402 Format (EVM - Signature-based):**
+```json
+{
+  "x402Version": 1,
+  "scheme": "exact",
+  "network": "base-sepolia",
+  "payload": {
+    "signature": "0x2d6a7588d6acca505cbf0d9a4a227e0c52c6c34008c8e8986a1283259764173608a2ce6496642e377d6da8dbbf5836e9bd15092f9ecab05ded3d6293af148b571c",
+    "authorization": {
+      "from": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "to": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+      "value": "1000000",
+      "validAfter": "1740672089",
+      "validBefore": "1740672154",
+      "nonce": "0xf3746613c2d920b5fdabc0856f2aeb2d4f88ee6037b8cc5d04a71a4462f13480"
+    }
+  }
+}
+```
+
+**Stellar x402 Format (XDR-based):**
+```json
+{
+  "x402Version": 1,
+  "scheme": "exact",
+  "network": "stellar-testnet",
+  "payload": {
+    "signedTxXdr": "AAAAAgAAAAA...",  // Base64-encoded signed transaction
+    "sourceAccount": "GABCDEFGHIJKLMNOPQRSTUVWXYZ2345678901234",
+    "amount": "10000000",  // Stroops (1 XLM)
+    "destination": "GC63PSERYMUUUJKYSSFQ7FKRAU5UPIP3XUC6X7DLMZUB7SSCPW5BSIRT",
+    "asset": "native",
+    "validUntilLedger": 12345678,  // Ledger sequence number
+    "nonce": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
+**Key Differences:**
+
+| Field | EVM (Coinbase) | Stellar (Ours) |
+|-------|---------------|----------------|
+| **Transaction Format** | `signature` + `authorization` object | `signedTxXdr` (complete signed transaction) |
+| **Payer Address** | `authorization.from` | `sourceAccount` |
+| **Amount** | `authorization.value` | `amount` |
+| **Destination** | `authorization.to` | `destination` |
+| **Expiry** | `validBefore` (Unix timestamp) | `validUntilLedger` (ledger sequence) |
+| **Nonce** | Hex string in `authorization` | String in payload root |
+| **Asset** | N/A (inferred from contract) | `asset` field (`"native"` or contract) |
+
+**Why XDR?**
+- Stellar uses XDR (eXternal Data Representation) for all transactions
+- The `signedTxXdr` contains the complete, signed transaction ready for submission
+- Facilitator can optionally fee-bump without modifying the client's transaction
+- Built-in replay protection via Stellar's sequence numbers
+
+### 3. Facilitator Verify Request
+
+**Base x402 Format:**
+```json
+{
+  "x402Version": 1,
+  "paymentPayload": { /* PaymentPayload object */ },
+  "paymentRequirements": { /* PaymentRequirements object */ }
+}
+```
+
+**Stellar x402 Format (Compatible, with flexibility):**
+```json
+{
+  "x402Version": 1,
+  "paymentPayload": { /* PaymentPayload object */ },  // OR
+  "paymentHeader": "base64-encoded-payment-header",   // Alternative format
+  "paymentRequirements": { /* PaymentRequirements object */ }
+}
+```
+
+**Note:** Stellar facilitator accepts both `paymentPayload` (JSON object) and `paymentHeader` (base64 string) for flexibility.
+
+### 4. Facilitator Verify Response
+
+**Both Formats (Identical):**
+```json
+{
+  "isValid": true,
+  "invalidReason": null,
+  "payer": "GABCDEFGHIJKLMNOPQRSTUVWXYZ2345678901234"
+}
+```
+
+### 5. Facilitator Settle Response
+
+**Both Formats (Identical):**
+```json
+{
+  "success": true,
+  "errorReason": null,
+  "payer": "GABCDEFGHIJKLMNOPQRSTUVWXYZ2345678901234",
+  "transaction": "abc123def456...",  // Transaction hash
+  "network": "stellar-testnet"
+}
+```
+
+### 6. Payment Response Header (X-PAYMENT-RESPONSE)
+
+After successful payment, the server includes this in the response header:
+
+**Both Formats (Identical):**
+```json
+{
+  "success": true,
+  "transaction": "abc123def456...",
+  "network": "stellar-testnet",
+  "payer": "GABCDEFGHIJKLMNOPQRSTUVWXYZ2345678901234"
+}
+```
+
+**Sent as:** `X-PAYMENT-RESPONSE: <base64-encoded-json>`
+
+## Summary of Format Differences
+
+| Aspect | EVM (Coinbase) | Stellar (Ours) |
+|--------|---------------|----------------|
+| **Payment Structure** | Signature + authorization object | Complete signed XDR transaction |
+| **Address Format** | `0x...` (42 chars) | `G...` (56 chars, base32) |
+| **Amount Decimals** | Varies (USDC: 6, ETH: 18) | Fixed (XLM: 7 stroops) |
+| **Expiry** | Unix timestamp (`validBefore`) | Ledger sequence (`validUntilLedger`) |
+| **Native Asset** | Requires ERC-20 contract | `"native"` (no contract) |
+| **Transaction Format** | EIP-712 typed data signature | XDR-encoded transaction |
+| **Fee Sponsorship** | Meta-transactions | Fee-bump transactions |
+| **Replay Protection** | Nonce in authorization | Sequence numbers (protocol-level) |
+
 ## Packages
 
 | Package | Description | Use Case |
@@ -279,6 +479,10 @@ Currently supported networks:
 
 - ✅ **Stellar Testnet** (`stellar-testnet`)
 - 🚧 **Stellar Mainnet** (`stellar-mainnet`) - Coming soon
+
+## Roadmap
+
+See [ROADMAP.md](./ROADMAP.md) for our development plans, upcoming features, and community contribution opportunities.
 
 ## Contributing
 
